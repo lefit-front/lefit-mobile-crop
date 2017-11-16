@@ -2,25 +2,24 @@ import utils from './utils'
 const { setCss, convertBase64UrlToBlob } = utils
 import styles from './styles'
 import alloyfinger from 'alloyfinger'
-// 来个注释
-const _init = Symbol('_init')
-const _initHtml = Symbol('_initHtml')
-const _createBtn = Symbol('_createBtn')
 
 class ImbCrop {
   constructor(data = {
     file: null,
     onConfirm: function () { },
-    onCancel: function () { }
+    onCancel: function () { },
+    confirmText: '确定',
+    cancelText: '取消',
+    rotateText: '旋转'
   }) {
     this.onConfirm = data.onConfirm
     this.onCancel = data.onCancel
     this.sourceFile = data.file
+    this.confirmText = data.confirmText
+    this.cancelText = data.cancelText
+    this.rotateText = data.rotateText
     this.winWidth = window.innerWidth // 屏幕尺寸
     this.winHeight = window.innerHeight
-    this.confirmText = '确定'
-    this.cancelText = '取消'
-    this.rotateText = '旋转'
     this.isTouch = false
     this.canvas = document.createElement('canvas')
     this.ctx = null
@@ -29,10 +28,10 @@ class ImbCrop {
     this.scale = 1
     this.originX = 0
     this.originY = 0
-    this.imgPos = {}
-    this.clipWidth = 0
-    this.clipHeight = 0
-    this.rectPos = {}
+    this.imgPos = {} // 保存图片绘制坐标信息
+    this.clipWidth = 0 // 裁剪宽度
+    this.clipHeight = 0 // 裁剪高度
+    this.rectPos = {} // 保存裁剪区域信息
     this.container = null
     EXIF: window.EXIF,
     this.preventHandle = function (e) {
