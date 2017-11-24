@@ -1,10 +1,10 @@
-# imb-mobile-crop
+# lefit-mobile-crop
 
 > 移动端裁剪方案
 
 使用方法:
 ```
-  var crop = new ImbCrop({
+  var crop = new LefitMobileCrop({
     file: file, // 从input拿到的file文件
     onConfirm: function () { }, // 裁剪成功后的回调
     onCancel: function () { }, // 取消裁剪的回调

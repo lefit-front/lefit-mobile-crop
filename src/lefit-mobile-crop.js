@@ -4,14 +4,16 @@ import styles from './styles'
 import alloyfinger from 'alloyfinger'
 
 class ImbCrop {
-  constructor(data = {
-    file: null,
-    onConfirm: function () { },
-    onCancel: function () { },
-    confirmText: '确定',
-    cancelText: '取消',
-    rotateText: '旋转'
-  }) {
+  constructor(params) {
+    let data = {
+      file: null,
+      onConfirm: function () { },
+      onCancel: function () { },
+      confirmText: '确定',
+      cancelText: '取消',
+      rotateText: '旋转'
+    }
+    data = Object.assign(data, params)
     this.onConfirm = data.onConfirm
     this.onCancel = data.onCancel
     this.sourceFile = data.file
@@ -62,13 +64,13 @@ class ImbCrop {
     confirmBtn.addEventListener('click', this.confirm.bind(this), false)
     rotateBtn.addEventListener('click', this.rotate.bind(this), false)
     cancelBtn.addEventListener('click', this.cancel.bind(this), false)
-    setCss(confirmBtn, styles.btn, {width: '15%'})
-    setCss(rotateBtn, styles.btn, {width: '70%'})
     setCss(cancelBtn, styles.btn, {width: '15%'})
+    setCss(rotateBtn, styles.btn, {width: '70%'})
+    setCss(confirmBtn, styles.btn, {width: '15%'})
     setCss(btnContainer, styles.btnContainer)
-    btnContainer.appendChild(confirmBtn)
-    btnContainer.appendChild(rotateBtn)
     btnContainer.appendChild(cancelBtn)
+    btnContainer.appendChild(rotateBtn)
+    btnContainer.appendChild(confirmBtn)
     frag.appendChild(btnContainer)
     frag.appendChild(this.canvas)
     this.container.appendChild(frag)
