@@ -9,6 +9,7 @@ class ImbCrop {
       file: null,
       onConfirm: function () { },
       onCancel: function () { },
+      imageRatio: '750:400', // width:height
       confirmText: '确定',
       cancelText: '取消',
       rotateText: '旋转'
@@ -20,6 +21,7 @@ class ImbCrop {
     this.confirmText = data.confirmText
     this.cancelText = data.cancelText
     this.rotateText = data.rotateText
+    this.imageRatio = data.imageRatio
     this.winWidth = window.innerWidth // 屏幕尺寸
     this.winHeight = window.innerHeight
     this.isTouch = false
@@ -159,7 +161,9 @@ class ImbCrop {
   drawClipRect () { // 绘制裁剪区域
     this.ctx.fillStyle = '#fff'
     this.ctx.strokeStyle = '#fff'
-    this.clipHeight = this.clipWidth = this.winWidth
+    let ratio = this.imageRatio.split(':')
+    this.clipHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth
+    this.clipWidth = this.winWidth
     let leftTopPosX = this.winWidth / 2 - this.clipWidth / 2
     let leftTopPosY = this.winHeight / 2 - this.clipHeight / 2
     this.ctx.strokeRect(leftTopPosX, leftTopPosY, this.clipWidth, this.clipHeight)
