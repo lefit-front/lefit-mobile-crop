@@ -9,7 +9,7 @@ class ImbCrop {
       file: null,
       onConfirm: function () { },
       onCancel: function () { },
-      imageRatio: '750:400', // width:height
+      imageRatio: '1:1', // width:height
       confirmText: '确定',
       cancelText: '取消',
       rotateText: '旋转'
@@ -136,6 +136,7 @@ class ImbCrop {
       if (this.drawHeight < limitHeight) { // 当缩放后的高度小于限制高度，高度设为限制高度，宽度等比自适应
         this.drawHeight = limitHeight
         this.drawWidth = this.imgWidth * limitHeight / this.imgHeight
+        this.scale = this.drawWidth / this.imgWidth
       }
     } else if (this.imgWidth > this.imgHeight) {
       this.drawHeight = limitHeight
@@ -144,6 +145,7 @@ class ImbCrop {
       if (this.drawWidth < this.winWidth) { // 当缩放后的宽度小于屏幕宽度，宽度设为屏幕宽度，高度等比自适应
         this.drawWidth = this.winWidth
         this.drawHeight = this.winWidth * this.imgHeight / this.imgWidth
+        this.scale = this.drawHeight / this.imgHeight
       }
     } else {
       this.drawWidth = this.drawHeight = this.imgWidth
