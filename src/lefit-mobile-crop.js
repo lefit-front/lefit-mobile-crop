@@ -127,14 +127,24 @@ class ImbCrop {
     document.body.addEventListener('touchmove', this.preventHandle)
     this.originX = this.winWidth / 2
     this.originY = this.winHeight / 2
+    let ratio = this.imageRatio.split(':')
+    let limitHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth // 根据设置的图片比例，算出的高度
     if (this.imgWidth < this.imgHeight) {
       this.drawWidth = this.winWidth
       this.scale = this.drawWidth / this.imgWidth
       this.drawHeight = this.scale * this.imgHeight
+      if (this.drawHeight < limitHeight) { // 当缩放后的高度小于限制高度，高度设为限制高度，宽度等比自适应
+        this.drawHeight = limitHeight
+        this.drawWidth = this.imgWidth * limitHeight / this.imgHeight
+      }
     } else if (this.imgWidth > this.imgHeight) {
-      this.drawHeight = this.winWidth
+      this.drawHeight = limitHeight
       this.scale = this.drawHeight / this.imgHeight
       this.drawWidth = this.scale * this.imgWidth
+      if (this.drawWidth < this.winWidth) { // 当缩放后的宽度小于屏幕宽度，宽度设为屏幕宽度，高度等比自适应
+        this.drawWidth = this.winWidth
+        this.drawHeight = this.winWidth * this.imgHeight / this.imgWidth
+      }
     } else {
       this.drawWidth = this.drawHeight = this.imgWidth
       this.scale = 1
