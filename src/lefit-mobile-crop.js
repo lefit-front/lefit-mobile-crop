@@ -138,7 +138,7 @@ class ImbCrop {
         this.drawWidth = this.imgWidth * limitHeight / this.imgHeight
         this.scale = this.drawWidth / this.imgWidth
       }
-    } else if (this.imgWidth > this.imgHeight) {
+    } else {
       this.drawHeight = limitHeight
       this.scale = this.drawHeight / this.imgHeight
       this.drawWidth = this.scale * this.imgWidth
@@ -147,9 +147,6 @@ class ImbCrop {
         this.drawHeight = this.winWidth * this.imgHeight / this.imgWidth
         this.scale = this.drawHeight / this.imgHeight
       }
-    } else {
-      this.drawWidth = this.drawHeight = this.imgWidth
-      this.scale = 1
     }
     this.ctx = this.canvas.getContext('2d')
     this.canvas.width = this.winWidth
@@ -340,11 +337,13 @@ class ImbCrop {
     })
     document.body.removeEventListener('touchmove', this.preventHandle)
     this.container.style.display = 'none'
+    this.container.parentNode.removeChild(this.container)
   }
   cancel() {
     document.body.removeEventListener('touchmove', this.preventHandle)
     this.imgObj = null
     this.container.style.display = 'none'
+    this.container.parentNode.removeChild(this.container)
     this.onCancel && this.onCancel()
   }
 }
