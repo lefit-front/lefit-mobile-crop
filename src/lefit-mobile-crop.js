@@ -9,6 +9,7 @@ class ImbCrop {
       file: null,
       onConfirm: function () { },
       onCancel: function () { },
+      imageRatio: '1:1', // width:height
       confirmText: '确定',
       cancelText: '取消',
       rotateText: '旋转'
@@ -20,6 +21,7 @@ class ImbCrop {
     this.confirmText = data.confirmText
     this.cancelText = data.cancelText
     this.rotateText = data.rotateText
+    this.imageRatio = data.imageRatio
     this.winWidth = window.innerWidth // 屏幕尺寸
     this.winHeight = window.innerHeight
     this.isTouch = false
@@ -125,17 +127,26 @@ class ImbCrop {
     document.body.addEventListener('touchmove', this.preventHandle)
     this.originX = this.winWidth / 2
     this.originY = this.winHeight / 2
+    let ratio = this.imageRatio.split(':')
+    let limitHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth // 根据设置的图片比例，算出的高度
     if (this.imgWidth < this.imgHeight) {
       this.drawWidth = this.winWidth
       this.scale = this.drawWidth / this.imgWidth
       this.drawHeight = this.scale * this.imgHeight
-    } else if (this.imgWidth > this.imgHeight) {
-      this.drawHeight = this.winWidth
+      if (this.drawHeight < limitHeight) { // 当缩放后的高度小于限制高度，高度设为限制高度，宽度等比自适应
+        this.drawHeight = limitHeight
+        this.drawWidth = this.imgWidth * limitHeight / this.imgHeight
+        this.scale = this.drawWidth / this.imgWidth
+      }
+    } else {
+      this.drawHeight = limitHeight
       this.scale = this.drawHeight / this.imgHeight
       this.drawWidth = this.scale * this.imgWidth
-    } else {
-      this.drawWidth = this.drawHeight = this.imgWidth
-      this.scale = 1
+      if (this.drawWidth < this.winWidth) { // 当缩放后的宽度小于屏幕宽度，宽度设为屏幕宽度，高度等比自适应
+        this.drawWidth = this.winWidth
+        this.drawHeight = this.winWidth * this.imgHeight / this.imgWidth
+        this.scale = this.drawHeight / this.imgHeight
+      }
     }
     this.ctx = this.canvas.getContext('2d')
     this.canvas.width = this.winWidth
@@ -159,7 +170,9 @@ class ImbCrop {
   drawClipRect () { // 绘制裁剪区域
     this.ctx.fillStyle = '#fff'
     this.ctx.strokeStyle = '#fff'
-    this.clipHeight = this.clipWidth = this.winWidth
+    let ratio = this.imageRatio.split(':')
+    this.clipHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth
+    this.clipWidth = this.winWidth
     let leftTopPosX = this.winWidth / 2 - this.clipWidth / 2
     let leftTopPosY = this.winHeight / 2 - this.clipHeight / 2
     this.ctx.strokeRect(leftTopPosX, leftTopPosY, this.clipWidth, this.clipHeight)
@@ -324,11 +337,13 @@ class ImbCrop {
     })
     document.body.removeEventListener('touchmove', this.preventHandle)
     this.container.style.display = 'none'
+    this.container.parentNode.removeChild(this.container)
   }
   cancel() {
     document.body.removeEventListener('touchmove', this.preventHandle)
     this.imgObj = null
     this.container.style.display = 'none'
+    this.container.parentNode.removeChild(this.container)
     this.onCancel && this.onCancel()
   }
 }
