@@ -7,6 +7,7 @@ class ImbCrop {
   constructor(params) {
     let data = {
       file: null,
+      src: '',
       onConfirm: function () { },
       onCancel: function () { },
       imageRatio: '1:1', // width:height
@@ -17,7 +18,7 @@ class ImbCrop {
     data = Object.assign(data, params)
     this.onConfirm = data.onConfirm
     this.onCancel = data.onCancel
-    this.sourceFile = data.file
+    this.source = data.file || data.src
     this.confirmText = data.confirmText
     this.cancelText = data.cancelText
     this.rotateText = data.rotateText
@@ -47,10 +48,10 @@ class ImbCrop {
       pressMove: this.pressMove.bind(this)
     })
     this.imgHeight = 0 // canvas上绘制的img属性
-    this.imgWdith = 0
+    this.imgWidth = 0
     this.imgObj = null
     this.initHtml()
-    this.sourceFile && this.loadFile()
+    this.source && this.loadSource()
   }
   initHtml() {
     let frag = document.createDocumentFragment()
@@ -83,30 +84,62 @@ class ImbCrop {
     btn.innerHTML = name
     return btn
   }
-  loadFile() {
+  src2obj (src, crossOrigin) {
+    return new Promise((resolve, reject) => {
+      let img = new Image()
+      if (crossOrigin) {
+        img.crossOrigin = 'Anonymous'
+      }
+      img.src = src
+      img.addEventListener('load', loadEvt)
+      img.addEventListener('error', errorEvt)
+      function loadEvt () {
+        return resolve(img)
+        removeEvt()
+      }
+      function errorEvt() {
+        return reject()
+        removeEvt()
+      }
+      function removeEvt () {
+        img.removeEventListener('load', loadEvt)
+        img.removeEventListener('error', errorEvt)
+      }
+    })
+  }
+  loadSource() {
     let me = this
     // 文件类型判断
-    if (!/image\/[png|jpeg|jpg]/.test(this.sourceFile.type)) {
-      alert('请上传文件类型为png/jpeg/jpg其中一种的图片!')
-      return false
-    }
-    let reader = new FileReader()
-    reader.readAsDataURL(this.sourceFile)
-    reader.onload = (event) => {
-      let img = new Image()
-      img.src = event.target.result
-      img.onload = function () {
-        // 这里可能存在旋转的情况
-        if (me.EXIF && me.getPhotoOrientation(this)) {
-          let rightImg = new Image()
-          rightImg.src = me.getRightBase64(this)
-          rightImg.onload = function () {
-            me.setRightImgInfo(this)
-          }
-        } else {
-          me.setRightImgInfo(this)
-        }
+    if (typeof this.source === 'string') {
+      let needsCross = /(https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/.test(this.source)
+      this.src2obj(this.source, needsCross).then(img => {
+        this.imgLoadCallback(img)
+      })
+    } else {
+      if (!/image\/[png|jpeg|jpg]/.test(this.source.type)) {
+        alert('请上传文件类型为png/jpeg/jpg其中一种的图片!')
+        return false
       }
+      let reader = new FileReader()
+      reader.readAsDataURL(this.source)
+      reader.onload = (event) => {
+        me.src2obj(event.target.result).then(img => {
+          me.imgLoadCallback(img)
+        })
+      }
+    }
+  }
+  // 图片加载后的统一回调
+  imgLoadCallback (imgObj) {
+    // 这里可能存在旋转的情况
+    if (this.EXIF && this.getPhotoOrientation(imgObj)) {
+      let rightImg = new Image()
+      rightImg.src = this.getRightBase64(imgObj)
+      rightImg.onload = function () {
+        this.setRightImgInfo(imgObj)
+      }
+    } else {
+      this.setRightImgInfo(imgObj)
     }
   }
   setRightImgInfo (imgObj) { // 获取到正确的图片后进行信息获取
@@ -118,7 +151,6 @@ class ImbCrop {
     canvas.width = this.imgWidth
     canvas.height = this.imgHeight
     ctx.drawImage(imgObj, 0, 0, this.imgWidth, this.imgHeight)
-    this.base64 = canvas.toDataURL('image/jpeg', 0.7)
     this.initCut()
   }
   initCut () {
@@ -158,7 +190,6 @@ class ImbCrop {
   drawImage () {
     // 根据origin和偏移量来实时调整
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-    // this.ctx.drawImage(this.imgObj, 0, 0, 200, 200)
     this.ctx.drawImage(this.imgObj, this.originX - this.drawWidth / 2, this.originY - this.drawHeight / 2, this.drawWidth, this.drawHeight)
     this.imgPos = {
       x1: this.originX - this.drawWidth / 2,
@@ -227,14 +258,12 @@ class ImbCrop {
     ctx.translate(this.imgObj.height, 0) // 将canvas的画布点转移到右上角
     ctx.rotate(90 * Math.PI / 180)
     ctx.drawImage(this.imgObj, 0, 0, this.imgObj.width, this.imgObj.height)
-    let img = new Image()
-    this.base64 = img.src = canvas.toDataURL()
-    img.onload = function () {
-      me.imgObj = this
-      me.imgWidth = this.width
-      me.imgHeight = this.height
-      me.initCut()
-    }
+    this.src2obj(canvas.toDataURL()).then(img => {
+      this.imgObj = img
+      this.imgWidth = img.width
+      this.imgHeight = img.height
+      this.initCut()
+    })
   }
   getPhotoOrientation (img) {
     let me = this
@@ -319,21 +348,14 @@ class ImbCrop {
     let clipPos = this.getClipPos()
     let originCanvas = document.createElement('canvas')
     let originCanvasCtx = originCanvas.getContext('2d')
-    originCanvas.width = this.imgObj.width
-    originCanvas.height = this.imgObj.height
-    originCanvasCtx.drawImage(this.imgObj, 0, 0, this.imgObj.width, this.imgObj.height)
-    let copyCanvas = document.createElement('canvas')
-    let copyCanvasCtx = copyCanvas.getContext('2d')
-    copyCanvas.width = clipPos.w
-    copyCanvas.height = clipPos.h
-    copyCanvasCtx.rect(0, 0, copyCanvas.width, copyCanvas.height)
-    let imgData = originCanvasCtx.getImageData(clipPos.offsetX, clipPos.offsetY, clipPos.w, clipPos.h)
-    copyCanvasCtx.putImageData(imgData, 0, 0)
-    copyCanvasCtx.clip()
+    originCanvas.width = clipPos.w
+    originCanvas.height = clipPos.h
+    originCanvasCtx.drawImage(this.imgObj, -clipPos.offsetX, -clipPos.offsetY, this.imgObj.width, this.imgObj.height)
+    let base64 = originCanvas.toDataURL()
     this.onConfirm && this.onConfirm({
-      base64: copyCanvas.toDataURL(),
-      file: convertBase64UrlToBlob(this.base64),
-      coordinate: clipPos
+      base64: base64,
+      file: convertBase64UrlToBlob(base64),
+      clip: clipPos
     })
     document.body.removeEventListener('touchmove', this.preventHandle)
     this.container.style.display = 'none'

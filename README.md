@@ -6,6 +6,7 @@
 ```
   var crop = new LefitMobileCrop({
     file: file, // 从input拿到的file文件
+    src: 'http://xxx', // 加载base64或者http图片链接
     imageRatio: '1:1', // width:height，图片裁剪比例，宽度始终为屏幕宽度
     onConfirm: function () { }, // 裁剪成功后的回调
     onCancel: function () { }, // 取消裁剪的回调
