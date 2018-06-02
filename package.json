@@ -1,7 +1,7 @@
 {
   "name": "lefit-mobile-crop",
   "description": "lefit-移动端裁剪方案",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "cMing <mayday404@163.com>",
   "license": "MIT",
   "private": false,
@@ -11,7 +11,7 @@
     "package": "rollup -c rollup.config.js",
     "deploy": "npm run package && npm publish"
   },
-  "main": "src/dist/lefit-mobile-crop.min.js",
+  "main": "lefit-mobile-crop.min.js",
   "dependencies": {
     "rollup": "^0.59.4",
     "rollup-plugin-babel": "^3.0.4",
