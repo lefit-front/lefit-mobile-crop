@@ -1,7 +1,7 @@
 import utils from './utils'
 const { setCss, convertBase64UrlToBlob } = utils
 import styles from './styles'
-import alloyfinger from 'alloyfinger'
+import alloyfinger from './alloyfinger'
 
 class ImbCrop {
   constructor(params) {

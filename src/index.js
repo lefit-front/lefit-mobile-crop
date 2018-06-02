@@ -1,3 +1,4 @@
+// import LefitMobileCrop from '../dist/lefit-mobile-crop.min.js'
 import LefitMobileCrop from './lefit-mobile-crop'
 
 document.getElementById('testInput').onchange = function (evt) {
