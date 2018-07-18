@@ -8,8 +8,6 @@ class ImbCrop {
     let data = {
       file: null,
       src: '',
-      onConfirm: function () { },
-      onCancel: function () { },
       imageRatio: '1:1', // width:height
       widthRatio: '1:1', // 裁剪框的宽度 : 屏幕的宽度
       confirmText: '确定',
@@ -17,12 +15,18 @@ class ImbCrop {
       rotateText: '旋转'
     }
     this.init(Object.assign(data, params))
-    this.initHtml()
-    this.source && this.loadSource()
+    this.render = () => {
+      return new Promise((resolve, reject) => {
+        this.initHtml()
+        this.source && this.loadSource()
+        this.onConfirm = resolve
+        this.onCancel = reject
+      })
+    }
   }
   init(data) {
-    this.onConfirm = data.onConfirm
-    this.onCancel = data.onCancel
+    this.onConfirm = null
+    this.onCancel = null
     this.source = data.file || data.src
     this.confirmText = data.confirmText
     this.cancelText = data.cancelText
