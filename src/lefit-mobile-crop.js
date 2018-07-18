@@ -11,11 +11,16 @@ class ImbCrop {
       onConfirm: function () { },
       onCancel: function () { },
       imageRatio: '1:1', // width:height
+      widthRatio: '1:1', // 裁剪框的宽度 : 屏幕的宽度
       confirmText: '确定',
       cancelText: '取消',
       rotateText: '旋转'
     }
-    data = Object.assign(data, params)
+    this.init(Object.assign(data, params))
+    this.initHtml()
+    this.source && this.loadSource()
+  }
+  init(data) {
     this.onConfirm = data.onConfirm
     this.onCancel = data.onCancel
     this.source = data.file || data.src
@@ -25,6 +30,8 @@ class ImbCrop {
     this.imageRatio = data.imageRatio
     this.winWidth = window.innerWidth // 屏幕尺寸
     this.winHeight = window.innerHeight
+    let widthRatio = data.widthRatio.split(':') 
+    this.rectWidth = widthRatio[0] * this.winWidth / widthRatio[1]
     this.isTouch = false
     this.canvas = document.createElement('canvas')
     this.ctx = null
@@ -50,8 +57,6 @@ class ImbCrop {
     this.imgHeight = 0 // canvas上绘制的img属性
     this.imgWidth = 0
     this.imgObj = null
-    this.initHtml()
-    this.source && this.loadSource()
   }
   initHtml() {
     let frag = document.createDocumentFragment()
@@ -156,11 +161,13 @@ class ImbCrop {
   initCut () {
     // 这里需要将body的touchmove事件屏蔽掉 否认安卓会滚 // 紧随
     this.container.style.display = 'block'
-    document.body.addEventListener('touchmove', this.preventHandle)
+    document.body.addEventListener('touchmove', this.preventHandle, {passive: false})
     this.originX = this.winWidth / 2
     this.originY = this.winHeight / 2
     let ratio = this.imageRatio.split(':')
-    let limitHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth // 根据设置的图片比例，算出的高度
+    // let limitHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth // 根据设置的图片比例，算出的高度
+    let limitHeight = ratio ? ratio[1] * this.rectWidth / ratio[0] : this.rectWidth // 根据设置的图片比例，算出的高度
+
     if (this.imgWidth < this.imgHeight) {
       this.drawWidth = this.winWidth
       this.scale = this.drawWidth / this.imgWidth
@@ -202,11 +209,11 @@ class ImbCrop {
     this.ctx.fillStyle = '#fff'
     this.ctx.strokeStyle = '#fff'
     let ratio = this.imageRatio.split(':')
-    this.clipHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth
-    this.clipWidth = this.winWidth
+    this.clipHeight = ratio ? ratio[1] * this.rectWidth / ratio[0] : this.rectWidth
+    this.clipWidth = this.rectWidth
     let leftTopPosX = this.winWidth / 2 - this.clipWidth / 2
     let leftTopPosY = this.winHeight / 2 - this.clipHeight / 2
-    this.ctx.strokeRect(leftTopPosX, leftTopPosY, this.clipWidth, this.clipHeight)
+    // this.ctx.strokeRect(leftTopPosX, leftTopPosY, this.clipWidth, this.clipHeight)
     this.rectPos = {
       x1: leftTopPosX,
       y1: leftTopPosY
@@ -216,10 +223,10 @@ class ImbCrop {
   }
   drawMask () {
     this.ctx.fillStyle = 'rgba(0,0,0,.6)'
-    this.ctx.fillRect(0, 0, this.canvas.width, this.rectPos.y1)
-    this.ctx.fillRect(0, 0, this.rectPos.x1, this.canvas.height)
-    this.ctx.fillRect(this.rectPos.x2, 0, this.canvas.width - this.rectPos.x2, this.canvas.height)
-    this.ctx.fillRect(0, this.rectPos.y2, this.canvas.width, this.canvas.height - this.rectPos.y2)
+    this.ctx.fillRect(0, 0, Math.round(this.rectPos.x1), Math.round(this.canvas.height))
+    this.ctx.fillRect(Math.round(this.rectPos.x1), 0, Math.round(this.rectPos.x2 - this.rectPos.x1), Math.round(this.rectPos.y1))
+    this.ctx.fillRect(Math.round(this.rectPos.x2), 0, this.canvas.width, this.canvas.height)
+    this.ctx.fillRect(Math.round(this.rectPos.x1), Math.round(this.rectPos.y2), Math.round(this.rectPos.x2 - this.rectPos.x1), Math.round(this.rectPos.y2 - this.rectPos.y1))
   }
   pinch(evt) {
     this.isTouch = true
