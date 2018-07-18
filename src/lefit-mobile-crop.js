@@ -32,6 +32,7 @@ class ImbCrop {
     this.winHeight = window.innerHeight
     let widthRatio = data.widthRatio.split(':') 
     this.rectWidth = widthRatio[0] * this.winWidth / widthRatio[1]
+    this.limitWidth = data.limitWidth || 0
     this.isTouch = false
     this.canvas = document.createElement('canvas')
     this.ctx = null
@@ -140,11 +141,11 @@ class ImbCrop {
     if (this.EXIF && this.getPhotoOrientation(imgObj)) {
       let rightImg = new Image()
       rightImg.src = this.getRightBase64(imgObj)
-      rightImg.onload = function () {
+      rightImg.onload = () => {
         this.setRightImgInfo(imgObj)
       }
     } else {
-      this.setRightImgInfo(imgObj)
+      this.setRightImgInfo(this.tinyImgObj(imgObj))
     }
   }
   setRightImgInfo (imgObj) { // 获取到正确的图片后进行信息获取
@@ -158,6 +159,23 @@ class ImbCrop {
     ctx.drawImage(imgObj, 0, 0, this.imgWidth, this.imgHeight)
     this.initCut()
   }
+  tinyImgObj (imgObj) {
+    //  图片大于1500时开启压缩 减少卡顿
+    if (!this.limitWidth) {
+      if (imgObj.width < 1500) {
+        return imgObj
+      } else {
+        this.limitWidth = 1500
+      }
+    }
+    let r = this.limitWidth / imgObj.width
+    let canvas = document.createElement('canvas')
+    let ctx = canvas.getContext('2d')
+    canvas.width = this.limitWidth // 因为canvas重置宽高会刷新画板,所以预先手动转换宽高
+    canvas.height = imgObj.height * r
+    ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height)
+    return canvas
+  }
   initCut () {
     // 这里需要将body的touchmove事件屏蔽掉 否认安卓会滚 // 紧随
     this.container.style.display = 'block'
@@ -165,7 +183,6 @@ class ImbCrop {
     this.originX = this.winWidth / 2
     this.originY = this.winHeight / 2
     let ratio = this.imageRatio.split(':')
-    // let limitHeight = ratio ? ratio[1] * this.winWidth / ratio[0] : this.winWidth // 根据设置的图片比例，算出的高度
     let limitHeight = ratio ? ratio[1] * this.rectWidth / ratio[0] : this.rectWidth // 根据设置的图片比例，算出的高度
 
     if (this.imgWidth < this.imgHeight) {
@@ -257,7 +274,6 @@ class ImbCrop {
     this.drawMask()
   }
   rotate() {
-    let me = this
     let canvas = document.createElement('canvas')
     let ctx = canvas.getContext('2d')
     canvas.width = this.imgObj.height // 因为canvas重置宽高会刷新画板,所以预先手动转换宽高
@@ -345,19 +361,25 @@ class ImbCrop {
   }
   getClipPos () { // 获取最终裁剪坐标
     return {
-      w: ~~(this.clipWidth / this.scale),
-      h: ~~(this.clipHeight / this.scale),
-      offsetX: ~~((this.rectPos.x1 - this.imgPos.x1) / this.scale),
-      offsetY: ~~((this.rectPos.y1 - this.imgPos.y1) / this.scale)
+      w: Math.round(this.clipWidth / this.scale),
+      h: Math.round(this.clipHeight / this.scale),
+      offsetX: Math.round((this.rectPos.x1 - this.imgPos.x1) / this.scale),
+      offsetY: Math.round((this.rectPos.y1 - this.imgPos.y1) / this.scale),
+      scale: this.scale
     }
+  }
+  drawOutputCanvas (clipPos) {
+    let canvas = document.createElement('canvas')
+    let ctx = canvas.getContext('2d')
+    let scale = this.limitWidth ? clipPos.w / this.limitWidth : 1
+    canvas.width = clipPos.w / scale
+    canvas.height = clipPos.h / scale
+    ctx.drawImage(this.imgObj, -clipPos.offsetX / scale, -clipPos.offsetY / scale, this.imgObj.width / scale, this.imgObj.height / scale)
+    return canvas
   }
   confirm() {
     let clipPos = this.getClipPos()
-    let originCanvas = document.createElement('canvas')
-    let originCanvasCtx = originCanvas.getContext('2d')
-    originCanvas.width = clipPos.w
-    originCanvas.height = clipPos.h
-    originCanvasCtx.drawImage(this.imgObj, -clipPos.offsetX, -clipPos.offsetY, this.imgObj.width, this.imgObj.height)
+    let originCanvas = this.drawOutputCanvas(clipPos)
     let base64 = originCanvas.toDataURL()
     this.onConfirm && this.onConfirm({
       base64: base64,
